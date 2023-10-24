@@ -185,7 +185,7 @@ class FeedForward(nn.Module):
 
 
 class Transformer(nn.Module):
-        """ Transformer with QKV Attention Blocks"""
+    """ Transformer with QKV Attention Blocks"""
     def __init__(self, cfg):
         super().__init__()
         self.embed = Embeddings(cfg)
@@ -210,7 +210,7 @@ class Transformer(nn.Module):
 
 
         # To used parameter-sharing strategies
-        # self.n_layers = cfg.n_layers
+        self.n_layers = cfg.process_layers
         # self.attn = QKVAttention(cfg)
         # self.proj = nn.Linear(cfg.hidden, cfg.hidden)
         self.norm1 = nn.LayerNorm(cfg.D)
@@ -225,14 +225,14 @@ class Transformer(nn.Module):
         seg = token_type_ids
         mask = attention_mask
         x = self.embed(x, seg)
-        h = x.clone().detach()
+
         cross_attn, cross_ff = self.cross_attend_blocks
-        x = self.norm1(cross_attn(h, self.latents, mask = mask) + self.latents)
+        x = self.norm1(cross_attn(x, self.latents, mask = mask) + self.latents)
 
         x = self.norm2(cross_ff(x) + x)
 
         self_attn, self_ff = self.layers
-        for _ in range(cfg.process_layers):
+        for _ in range(self.n_layers):
 
             x = self.norm3(self_attn(x, mask = None) + x)
             x = self.norm4(self_ff(x) + x)
